@@ -1,0 +1,105 @@
+import streamlit as st
+import os
+import shutil
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from PIL import Image
+
+# Function to move uploaded files to happy or sad folder
+def move_files_to_folders(uploaded_file, emotion):
+    if not os.path.exists(emotion):
+        os.makedirs(emotion)
+    with open(os.path.join(emotion, uploaded_file.name), "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+# Load dataset and split into train and test sets
+def load_data():
+    happy_files = os.listdir("happy")
+    sad_files = os.listdir("sad")
+
+    X = []
+    y = []
+    for file in happy_files:
+        img = Image.open(os.path.join("happy", file))
+        X.append(img)
+        y.append(1)  # happy label
+    for file in sad_files:
+        img = Image.open(os.path.join("sad", file))
+        X.append(img)
+        y.append(0)  # sad label
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    return X_train, X_test, y_train, y_test
+
+# Train logistic regression model
+def train_model(X_train, y_train):
+    X_train_flat = [np.array(img).flatten() for img in X_train]
+    model = LogisticRegression()
+    model.fit(X_train_flat, y_train)
+    return model
+
+# Main function
+def main():
+    st.title("Emotion Classifier")
+
+    # File upload
+    st.subheader("Upload Images")
+    uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png"])
+
+    if uploaded_file is not None:
+        emotion = st.radio("Select Emotion:", ("Happy", "Sad"))
+        if emotion == "Happy":
+            move_files_to_folders(uploaded_file, "happy")
+        elif emotion == "Sad":
+            move_files_to_folders(uploaded_file, "sad")
+        st.success("Image uploaded successfully!")
+
+    # Train and test model
+    if st.button("Train and Evaluate Model"):
+        X_train, X_test, y_train, y_test = load_data()
+        model = train_model(X_train, y_train)
+
+        # Evaluate model
+        X_test_flat = [np.array(img).flatten() for img in X_test]
+        y_pred = model.predict(X_test_flat)
+        accuracy = accuracy_score(y_test, y_pred)
+
+        st.subheader("Model Evaluation")
+        st.write("Accuracy:", accuracy)
+
+# Run the app
+if __name__ == "__main__":
+    main()
+
+
+##############################
+
+import streamlit as st
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import load_iris
+
+# Load dataset
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# Split data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Compute accuracy
+accuracy = accuracy_score(y_test, y_pred)
+
+# Streamlit app
+st.title('Accuracy Metrics Example')
+st.write('Accuracy:', accuracy)
+
